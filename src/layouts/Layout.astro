@@ -239,10 +239,6 @@ const { filename, title = "Samsara" } = Astro.props;
     document.body.appendChild(probe);
     cachedCh = probe.getBoundingClientRect().width;
     probe.remove();
-    if (!cachedCh) {
-      cachedCh =
-        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    }
     return cachedCh;
   };
 

@@ -175,8 +175,13 @@ const { filename, title = "Samsara" } = Astro.props;
         globalHTMLElement.dataset.webtuiTheme = "catppuccin-mocha";
       }
     }
-    let currSelection = clampedEntries[currentIndex];
-    currSelection.classList.remove("selected");
+    if (clampedEntries.length > 0) {
+      clampedEntries[currentIndex]?.classList.remove("selected");
+    }
+    // blog and notes can have different page counts, so an old page index can
+    // leave the new collection's selection empty; reset to the first page.
+    currentPage = 1;
+    blogBox?.setAttribute("data-pagination-index", "1");
     refreshActiveState();
     if (
       (event.detail == "BLOG" || event.detail == "NOTES") &&

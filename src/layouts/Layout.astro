@@ -232,24 +232,37 @@ const { filename, title = "Samsara" } = Astro.props;
   // one TUI cell (1ch) in px, measured once and cached
   let cachedCh = 0;
   const oneCh = () => {
-    if (cachedCh) return cachedCh;
+    if (cachedCh > 0) return cachedCh;
     const probe = document.createElement("span");
     probe.style.cssText =
       "position:absolute;visibility:hidden;pointer-events:none;width:1ch";
     document.body.appendChild(probe);
-    cachedCh = probe.getBoundingClientRect().width || 0;
+    cachedCh = probe.getBoundingClientRect().width;
     probe.remove();
+    if (!cachedCh) {
+      cachedCh =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    }
     return cachedCh;
+  };
+
+  // `html, body { height: 100%; overflow-x: hidden }` makes `body` the scroll
+  // container rather than the window, so scroll whichever element actually
+  // overflows instead of assuming `window`.
+  const scrollViewport = (delta: number) => {
+    const html = document.documentElement;
+    const target = html.scrollHeight > html.clientHeight ? html : document.body;
+    target.scrollBy(0, delta);
   };
 
   // vim-like scrolling, on every route except the main page
   const scrollByLine = (dir: number) => {
-    if (isScrollingRoute()) window.scrollBy(0, dir * oneCh());
+    if (isScrollingRoute()) scrollViewport(dir * oneCh());
   };
 
   const scrollByHalfPage = (dir: number) => {
     if (isScrollingRoute())
-      window.scrollBy(0, dir * Math.round(window.innerHeight / 2));
+      scrollViewport(dir * Math.round(window.innerHeight / 2));
   };
 
   document.addEventListener("keydown", (event) => {

@@ -199,6 +199,11 @@ const { filename, title = "Samsara" } = Astro.props;
 
   const movePage = (delta: number) => {
     if (lastPage > 1 && blogBox) {
+      // clear the current selection *before* clampedEntries is recomputed for
+      // the new page, otherwise the old highlight is orphaned and accumulates
+      if (clampedEntries.length > 0) {
+        clampedEntries[currentIndex]?.classList.remove("selected");
+      }
       currentPage = clampedPage(currentPage + delta);
       blogBox.setAttribute("data-pagination-index", currentPage.toString());
       refreshActiveState();

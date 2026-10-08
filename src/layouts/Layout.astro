@@ -79,6 +79,9 @@ const { filename, title = "Samsara" } = Astro.props;
   let currentMode: VimMode = "NORMAL";
   let currentIndex = 0;
   let currentPage = 1;
+  // which listing the layout is currently driving; used to only reset
+  // pagination when the collection actually changes (not when leaving a mode).
+  let currentCollection: "blog" | "notes" = "blog";
 
   // o* key sequence for NOTES mode
   let lastOPress = false;
@@ -175,8 +178,17 @@ const { filename, title = "Samsara" } = Astro.props;
         globalHTMLElement.dataset.webtuiTheme = "catppuccin-mocha";
       }
     }
-    let currSelection = clampedEntries[currentIndex];
-    currSelection.classList.remove("selected");
+    if (clampedEntries.length > 0) {
+      clampedEntries[currentIndex]?.classList.remove("selected");
+    }
+    // blog and notes have different page counts; only reset when the collection
+    // actually changes — leaving to NORMAL keeps the current page.
+    const targetCollection = event.detail === "NOTES" ? "notes" : "blog";
+    if (targetCollection !== currentCollection) {
+      currentCollection = targetCollection;
+      currentPage = 1;
+      blogBox?.setAttribute("data-pagination-index", "1");
+    }
     refreshActiveState();
     if (
       (event.detail == "BLOG" || event.detail == "NOTES") &&

@@ -220,10 +220,13 @@ const PAGINATION_SIZE = 7;
   };
 
   document.addEventListener("MODE_CHANGE", ((event: CustomEvent) => {
-    if (event.detail === "NOTES") {
-      setActiveCollection("notes");
-    } else if (event.detail === "BLOG" || event.detail === "NORMAL") {
-      setActiveCollection("blog");
+    const target = event.detail === "NOTES" ? "notes" : "blog";
+    // only reset pagination when the collection changes; returning to NORMAL
+    // (Esc) should keep the page the user was on.
+    if (target !== activeCollection) {
+      setActiveCollection(target);
+    } else {
+      updateVisiblePosts();
     }
   }) as EventListener);
 

@@ -57,7 +57,6 @@ const { filename, title = "Samsara" } = Astro.props;
 
   let modeElement = document.getElementById("vim-mode");
   let blogBox = document.getElementById("blog-box");
-  let globalHTMLElement = document.documentElement;
   let superSecretDeviceNotesToggle = document.getElementById("super-secret");
 
   const allBlogEntries = document.querySelectorAll(
@@ -152,8 +151,12 @@ const { filename, title = "Samsara" } = Astro.props;
     currentIndex = clampedIndex(currentIndex);
   };
 
-  superSecretDeviceNotesToggle?.addEventListener("click", (_) => {
-    if (currentMode === "NORMAL") {
+  superSecretDeviceNotesToggle?.addEventListener("click", () => {
+    // toggle NOTES like the `o*` sequence, so it stays usable on touch devices
+    if (currentMode === "NOTES") {
+      currentMode = "BLOG";
+      document.dispatchEvent(BlogModeChangeEvent);
+    } else {
       currentMode = "NOTES";
       document.dispatchEvent(NotesModeChangeEvent);
     }
@@ -164,15 +167,12 @@ const { filename, title = "Samsara" } = Astro.props;
       if (event.detail == "NOTES") {
         modeElement.textContent = "NOTES";
         modeElement.setAttribute("variant-", "red");
-        globalHTMLElement.dataset.webtuiTheme = "catppuccin-macchiato";
       } else if (event.detail == "BLOG") {
         modeElement.textContent = "BLOG";
         modeElement.setAttribute("variant-", "blue");
-        globalHTMLElement.dataset.webtuiTheme = "catppuccin-mocha";
       } else if (event.detail == "NORMAL") {
         modeElement.textContent = "NORMAL";
         modeElement.setAttribute("variant-", "blue");
-        globalHTMLElement.dataset.webtuiTheme = "catppuccin-mocha";
       }
     }
     let currSelection = clampedEntries[currentIndex];
@@ -226,18 +226,20 @@ const { filename, title = "Samsara" } = Astro.props;
         if (window.location.pathname != "/now") navigate("/now");
         break;
       case "o":
-        if (window.location.pathname == "/" && currentMode == "NORMAL") {
+        // `o` then `*` (within 1s) toggles NOTES mode from any mode
+        if (window.location.pathname == "/") {
           armOPress();
         }
         break;
       case "*":
-        if (
-          window.location.pathname == "/" &&
-          currentMode == "NORMAL" &&
-          lastOPress
-        ) {
-          currentMode = "NOTES";
-          document.dispatchEvent(NotesModeChangeEvent);
+        if (window.location.pathname == "/" && lastOPress) {
+          if (currentMode == "NOTES") {
+            currentMode = "BLOG";
+            document.dispatchEvent(BlogModeChangeEvent);
+          } else {
+            currentMode = "NOTES";
+            document.dispatchEvent(NotesModeChangeEvent);
+          }
         }
         lastOPress = false;
         break;

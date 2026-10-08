@@ -226,6 +226,16 @@ const { filename, title = "Samsara" } = Astro.props;
     }
   };
 
+  const rootFontPx = () =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+  // vim-like scrolling for NORMAL mode
+  const scrollByLine = (dir: number) =>
+    window.scrollBy(0, dir * Math.round(rootFontPx() * 1.5));
+
+  const scrollByHalfPage = (dir: number) =>
+    window.scrollBy(0, dir * Math.round(window.innerHeight / 2));
+
   document.addEventListener("keydown", (event) => {
     let pressedKey = event.key;
     // don't handle inputs when keybindings are open, unless quit
@@ -291,6 +301,7 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(1);
+        else if (currentMode == "NORMAL") scrollByLine(1);
         break;
       case "k":
         if (
@@ -298,6 +309,7 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(-1);
+        else if (currentMode == "NORMAL") scrollByLine(-1);
         break;
       case "h":
         if (
@@ -312,6 +324,18 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           movePage(1);
+        break;
+      case "d":
+        if (event.ctrlKey && currentMode == "NORMAL") {
+          event.preventDefault();
+          scrollByHalfPage(1);
+        }
+        break;
+      case "u":
+        if (event.ctrlKey && currentMode == "NORMAL") {
+          event.preventDefault();
+          scrollByHalfPage(-1);
+        }
         break;
       case "Enter":
         if (

@@ -38,6 +38,17 @@
   margin-inline: auto;
 }
 
+/* prototype: block cursor highlight */
+.prose .cursor-block {
+  background-color: color-mix(in srgb, var(--surface0), transparent 60%);
+  box-shadow: inset 2px 0 0 var(--mauve);
+  /* extend the box left by 1ch so the bar sits away from the text without
+     reflowing it (padding pushes the text right, the negative margin pulls the
+     box back, so the text stays put and the tint wraps around the bar) */
+  padding-left: 1ch;
+  margin-left: -1ch;
+}
+
 .prose h1 {
   font-size: 2.4ch;
 }

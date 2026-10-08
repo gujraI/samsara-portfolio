@@ -94,6 +94,17 @@ const { filename, title = "Samsara" } = Astro.props;
     }, O_SEQUENCE_TIMEOUT);
   };
 
+  // z-prefixed viewport commands (zz / zt / zb)
+  let lastZPress = false;
+  let zSequenceTimer: ReturnType<typeof setTimeout> | null = null;
+  const armZPress = () => {
+    lastZPress = true;
+    if (zSequenceTimer) clearTimeout(zSequenceTimer);
+    zSequenceTimer = setTimeout(() => {
+      lastZPress = false;
+    }, O_SEQUENCE_TIMEOUT);
+  };
+
   const clampedPage = (currentPage: number) => {
     if (currentPage <= 0) return 1;
     if (currentPage > lastPage) return lastPage;
@@ -265,6 +276,122 @@ const { filename, title = "Samsara" } = Astro.props;
       scrollViewport(dir * Math.round(window.innerHeight / 2));
   };
 
+  // ---- prototype: block cursor (option A) ----
+  const collectProseBlocks = () => {
+    const prose = document.querySelector<HTMLElement>(".prose");
+    if (!prose) return [] as HTMLElement[];
+    return Array.from(prose.children).filter(
+      (el) => el.textContent?.trim() || el.querySelector("img"),
+    ) as HTMLElement[];
+  };
+
+  let cursorBlocks: HTMLElement[] = [];
+  let cursorIndex = 0;
+  let cursorActive = false;
+  let lastCursorNav = 0;
+  const markCursorNav = () => (lastCursorNav = performance.now());
+
+  // touch devices get no block cursor at all
+  const isCoarsePointer = () =>
+    window.matchMedia?.("(pointer: coarse)").matches ?? false;
+
+  const cursorEligible = () =>
+    !isCoarsePointer() &&
+    window.location.pathname !== "/" &&
+    cursorBlocks.length > 0;
+
+  // only "live" once the user has hit a keyboard motion
+  const hasBlockCursor = () => cursorEligible() && cursorActive;
+
+  const highlightCursor = () => {
+    document
+      .querySelectorAll(".prose .cursor-block")
+      .forEach((el) => el.classList.remove("cursor-block"));
+    if (cursorActive) cursorBlocks[cursorIndex]?.classList.add("cursor-block");
+  };
+
+  const nearestBlockIndex = () => {
+    const anchor = window.innerHeight / 2;
+    let best = 0;
+    let bestDist = Infinity;
+    cursorBlocks.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      const d = Math.abs(rect.top + rect.height / 2 - anchor);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    return best;
+  };
+
+  const alignCursor = (where: "top" | "center" | "bottom") => {
+    const el = cursorBlocks[cursorIndex];
+    if (!el) return;
+    markCursorNav();
+    const rect = el.getBoundingClientRect();
+    const target =
+      where === "top"
+        ? 0
+        : where === "bottom"
+          ? window.innerHeight - rect.height
+          : (window.innerHeight - rect.height) / 2;
+    scrollViewport(rect.top - target);
+  };
+
+  const revealCursor = () => {
+    const el = cursorBlocks[cursorIndex];
+    if (!el) return;
+    markCursorNav();
+    const rect = el.getBoundingClientRect();
+    const margin = window.innerHeight * 0.15;
+    if (rect.top < margin) scrollViewport(rect.top - margin);
+    else if (rect.bottom > window.innerHeight - margin)
+      scrollViewport(rect.bottom - (window.innerHeight - margin));
+  };
+
+  const moveCursor = (delta: number) => {
+    if (!cursorEligible()) return;
+    cursorIndex = Math.max(
+      0,
+      Math.min(cursorIndex + delta, cursorBlocks.length - 1),
+    );
+    highlightCursor();
+    revealCursor();
+  };
+
+  const initBlockCursor = () => {
+    cursorBlocks = collectProseBlocks();
+    cursorIndex = cursorBlocks.length > 0 ? nearestBlockIndex() : 0;
+    cursorActive = false;
+    highlightCursor();
+  };
+
+  // Scrolling by any means other than j/k / Ctrl-d/u (trackpad, wheel, arrows)
+  // turns the cursor off until the next keyboard motion. `lastCursorNav` marks
+  // our own programmatic scrolls so they don't immediately switch it off.
+  const deactivateCursor = () => {
+    if (!cursorActive) return;
+    cursorActive = false;
+    highlightCursor();
+  };
+
+  // `scroll` events don't bubble, and here `body` (not the window) is the
+  // scroller — so listen in the capture phase to catch it at all.
+  document.addEventListener(
+    "scroll",
+    () => {
+      if (performance.now() - lastCursorNav < 150) return;
+      deactivateCursor();
+    },
+    { capture: true, passive: true },
+  );
+
+  // trackpad / mouse wheel
+  window.addEventListener("wheel", deactivateCursor, { passive: true });
+
+  initBlockCursor();
+
   document.addEventListener("keydown", (event) => {
     let pressedKey = event.key;
     // don't handle inputs when keybindings are open, unless quit
@@ -299,7 +426,28 @@ const { filename, title = "Samsara" } = Astro.props;
         }
         lastOPress = false;
         break;
+      case "z":
+        if (hasBlockCursor()) {
+          if (lastZPress) {
+            alignCursor("center");
+            lastZPress = false;
+          } else {
+            armZPress();
+          }
+        }
+        break;
+      case "t":
+        if (hasBlockCursor() && lastZPress) {
+          alignCursor("top");
+          lastZPress = false;
+        }
+        break;
       case "b":
+        if (lastZPress) {
+          lastZPress = false;
+          if (hasBlockCursor()) alignCursor("bottom");
+          break;
+        }
         if (
           window.location.pathname == "/" &&
           (currentMode == "NORMAL" || currentMode == "NOTES")
@@ -330,7 +478,13 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(1);
-        else scrollByLine(1);
+        else if (cursorEligible()) {
+          if (!cursorActive) {
+            cursorActive = true;
+            cursorIndex = nearestBlockIndex();
+          }
+          moveCursor(1);
+        } else scrollByLine(1);
         break;
       case "k":
         if (
@@ -338,7 +492,13 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(-1);
-        else scrollByLine(-1);
+        else if (cursorEligible()) {
+          if (!cursorActive) {
+            cursorActive = true;
+            cursorIndex = nearestBlockIndex();
+          }
+          moveCursor(-1);
+        } else scrollByLine(-1);
         break;
       case "h":
         if (
@@ -357,13 +517,27 @@ const { filename, title = "Samsara" } = Astro.props;
       case "d":
         if (event.ctrlKey && isScrollingRoute()) {
           event.preventDefault();
+          // Ctrl-d/u drive the cursor too: scroll half a page, then the cursor
+          // lands on whatever block is now at the center.
+          if (cursorEligible()) markCursorNav();
           scrollByHalfPage(1);
+          if (cursorEligible()) {
+            cursorActive = true;
+            cursorIndex = nearestBlockIndex();
+            highlightCursor();
+          }
         }
         break;
       case "u":
         if (event.ctrlKey && isScrollingRoute()) {
           event.preventDefault();
+          if (cursorEligible()) markCursorNav();
           scrollByHalfPage(-1);
+          if (cursorEligible()) {
+            cursorActive = true;
+            cursorIndex = nearestBlockIndex();
+            highlightCursor();
+          }
         }
         break;
       case "Enter":

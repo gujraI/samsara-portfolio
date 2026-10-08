@@ -75,6 +75,10 @@ const { filename, title = "Samsara" } = Astro.props;
   const isKeybindingsOverlayOpen = () =>
     document.getElementById("keybindings-overlay")?.style.display === "block";
 
+  // the selection highlight is a keyboard affordance; touch devices don't need it
+  const isCoarsePointer = () =>
+    window.matchMedia?.("(pointer: coarse)").matches ?? false;
+
   let currentMode: VimMode = "NORMAL";
   let currentIndex = 0;
   let currentPage = 1;
@@ -192,7 +196,8 @@ const { filename, title = "Samsara" } = Astro.props;
     refreshActiveState();
     if (
       (event.detail == "BLOG" || event.detail == "NOTES") &&
-      clampedEntries.length > 0
+      clampedEntries.length > 0 &&
+      !isCoarsePointer()
     ) {
       currentIndex = 0;
       clampedEntries[0].classList.add("selected");

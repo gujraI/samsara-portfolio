@@ -226,15 +226,31 @@ const { filename, title = "Samsara" } = Astro.props;
     }
   };
 
-  const rootFontPx = () =>
-    parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  // scrolling is only active off the main page
+  const isScrollingRoute = () => window.location.pathname !== "/";
 
-  // vim-like scrolling for NORMAL mode
-  const scrollByLine = (dir: number) =>
-    window.scrollBy(0, dir * Math.round(rootFontPx() * 1.5));
+  // one TUI cell (1ch) in px, measured once and cached
+  let cachedCh = 0;
+  const oneCh = () => {
+    if (cachedCh) return cachedCh;
+    const probe = document.createElement("span");
+    probe.style.cssText =
+      "position:absolute;visibility:hidden;pointer-events:none;width:1ch";
+    document.body.appendChild(probe);
+    cachedCh = probe.getBoundingClientRect().width || 0;
+    probe.remove();
+    return cachedCh;
+  };
 
-  const scrollByHalfPage = (dir: number) =>
-    window.scrollBy(0, dir * Math.round(window.innerHeight / 2));
+  // vim-like scrolling, on every route except the main page
+  const scrollByLine = (dir: number) => {
+    if (isScrollingRoute()) window.scrollBy(0, dir * oneCh());
+  };
+
+  const scrollByHalfPage = (dir: number) => {
+    if (isScrollingRoute())
+      window.scrollBy(0, dir * Math.round(window.innerHeight / 2));
+  };
 
   document.addEventListener("keydown", (event) => {
     let pressedKey = event.key;
@@ -301,7 +317,7 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(1);
-        else if (currentMode == "NORMAL") scrollByLine(1);
+        else scrollByLine(1);
         break;
       case "k":
         if (
@@ -309,7 +325,7 @@ const { filename, title = "Samsara" } = Astro.props;
           (currentMode == "BLOG" || currentMode == "NOTES")
         )
           moveSelection(-1);
-        else if (currentMode == "NORMAL") scrollByLine(-1);
+        else scrollByLine(-1);
         break;
       case "h":
         if (
@@ -326,13 +342,13 @@ const { filename, title = "Samsara" } = Astro.props;
           movePage(1);
         break;
       case "d":
-        if (event.ctrlKey && currentMode == "NORMAL") {
+        if (event.ctrlKey && isScrollingRoute()) {
           event.preventDefault();
           scrollByHalfPage(1);
         }
         break;
       case "u":
-        if (event.ctrlKey && currentMode == "NORMAL") {
+        if (event.ctrlKey && isScrollingRoute()) {
           event.preventDefault();
           scrollByHalfPage(-1);
         }

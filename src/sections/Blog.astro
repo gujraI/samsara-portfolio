@@ -126,6 +126,13 @@ const PAGINATION_SIZE = 7;
     color: var(--mauve);
     font-weight: 600;
   }
+
+  /* tap feedback on touch devices — selection is not persistent there */
+  @media (pointer: coarse) {
+    .blog-entry-parent-flex-wrapper:active {
+      background-color: color-mix(in srgb, var(--mauve), transparent 80%);
+    }
+  }
 </style>
 
 <script>

@@ -58,6 +58,7 @@ const { filename, title = "Samsara" } = Astro.props;
   let modeElement = document.getElementById("vim-mode");
   let blogBox = document.getElementById("blog-box");
   let globalHTMLElement = document.documentElement;
+  let superSecretDeviceNotesToggle = document.getElementById("super-secret");
 
   const allBlogEntries = document.querySelectorAll(
     ".blog-entry-parent-flex-wrapper",
@@ -150,6 +151,13 @@ const { filename, title = "Samsara" } = Astro.props;
     clampedEntries = clampEntries(allEntries, currentPage);
     currentIndex = clampedIndex(currentIndex);
   };
+
+  superSecretDeviceNotesToggle?.addEventListener("click", (_) => {
+    if (currentMode === "NORMAL") {
+      currentMode = "NOTES";
+      document.dispatchEvent(NotesModeChangeEvent);
+    }
+  });
 
   document.addEventListener("MODE_CHANGE", ((event: CustomEvent) => {
     if (modeElement) {

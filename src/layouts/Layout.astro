@@ -254,7 +254,7 @@ const { filename, title = "Samsara" } = Astro.props;
         ) {
           currentMode = "NORMAL";
           document.dispatchEvent(NormalModeChangeEvent);
-        } else {
+        } else if (window.location.pathname !== "/") {
           navigate("/");
         }
         break;

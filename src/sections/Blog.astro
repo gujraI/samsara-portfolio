@@ -212,8 +212,6 @@ const PAGINATION_SIZE = 7;
     blogBox?.setAttribute("data-pagination-index", "1");
     if (blogFooterDiv)
       blogFooterDiv.style.visibility = lastPage <= 1 ? "hidden" : "visible";
-    if (pageNumberLast)
-      pageNumberLast.innerText = lastPage > 1 ? lastPage.toString() : "1";
     updateVisiblePosts();
   };
 

@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import portraitUrl from "../assets/portrait.png?url";
 
 // drop oracle.svg / growth-grids.svg / delta-force.svg into src/assets/logos/
 // a missing file simply renders no logo, so the build never breaks on a gap
@@ -18,6 +19,8 @@ const experience: Array<{
   org: string;
   logo: string;
   period: string;
+  start: string;
+  current?: boolean;
   meta: MetaItem[];
   points: string[];
 }> = [
@@ -26,6 +29,8 @@ const experience: Array<{
     org: "oracle",
     logo: "oracle",
     period: "jul 2026 — present",
+    start: "2026-07",
+    current: true,
     meta: [{ text: "full-time" }, { text: "bengaluru · on-site" }],
     points: [
       "full-stack engineer on Oracle Data Safe, contributing across the Discovery & Masking and UI teams.",
@@ -37,6 +42,7 @@ const experience: Array<{
     org: "growth grids",
     logo: "growth-grids",
     period: "dec 2025 — mar 2026",
+    start: "2025-12",
     meta: [{ text: "freelance" }, { text: "remote" }],
     points: [
       "built a high-throughput CV extraction platform with React (shadcn/ui), FastAPI, PaddleOCR, Gemini 2.5 Flash Lite and MongoDB — PDF/DOCX ingestion, OCR, LLM-based structuring and rule-based normalization.",
@@ -49,6 +55,7 @@ const experience: Array<{
     org: "delta force · NIT trichy",
     logo: "delta-force",
     period: "aug 2023 — mar 2025",
+    start: "2023-08",
     meta: [
       {
         text: "delta.nitt.edu",
@@ -71,10 +78,72 @@ const links = [
   },
   { label: "x", href: "https://x.com/laxpsy" },
 ];
+
+// "uptime" is derived from the current role, so it advances on its own at build
+// time instead of being a number someone forgets to bump
+const currentRole = experience.find((job) => job.current);
+
+const monthsAt = (from: string) => {
+  const [year, month] = from.split("-").map(Number);
+  const now = new Date();
+  return Math.max(
+    0,
+    (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month),
+  );
+};
+
+const humanizeMonths = (months: number) => {
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  if (!years) return `${rest} mo${rest === 1 ? "" : "s"}`;
+  if (!rest) return `${years} yr${years === 1 ? "" : "s"}`;
+  return `${years} yr${years === 1 ? "" : "s"} ${rest} mo${rest === 1 ? "" : "s"}`;
+};
+
+const uptime = currentRole
+  ? `${humanizeMonths(monthsAt(currentRole.start))} @ ${currentRole.org}`
+  : null;
 ---
 
 <Layout filename="portfolio.astro" title="Portfolio">
   <section class="section-flex">
+    <div class="neofetch">
+      <img
+        class="portrait"
+        src={portraitUrl}
+        alt=""
+        aria-hidden="true"
+        width="120"
+        height="120"
+        decoding="async"
+      />
+      <div class="whoami">
+        <span class="whoami-head">
+          <span class="user">ansh</span>@<span class="host">gujral.life</span>
+        </span>
+        <span class="whoami-rule">───────────────────────</span>
+        <div class="kv">
+          <span class="k">role</span><span class="v"
+            >full-stack engineer @ oracle</span
+          >
+        </div>
+        <div class="kv">
+          <span class="k">location</span><span class="v">bengaluru, in</span>
+        </div>
+        <div class="kv">
+          <span class="k">editor</span><span class="v">nvim v0.12.5</span>
+        </div>
+        {
+          uptime && (
+            <div class="kv">
+              <span class="k">uptime</span>
+              <span class="v">{uptime}</span>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
     <div class="portfolio-box" box-="square" shear-="top">
       <div class="header">
         <span class="box-title">bio</span>
@@ -167,6 +236,60 @@ const links = [
 </Layout>
 
 <style>
+  .neofetch {
+    width: 100%;
+    max-width: 78ch;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3ch;
+  }
+
+  .portrait {
+    /* 2x the 120px source; integer multiples only, so pixelated scaling stays
+       even. 120px (1x) is the next step down if this is still too big. */
+    width: 240px;
+    height: 240px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    user-select: none;
+  }
+
+  .whoami {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2lh;
+    padding-top: 0.3lh;
+    font-size: 1.5ch;
+  }
+
+  .whoami-head .user {
+    color: var(--mauve);
+    font-weight: 600;
+  }
+
+  .whoami-head .host {
+    color: var(--white);
+  }
+
+  .whoami-rule {
+    color: color-mix(in srgb, var(--white), transparent 70%);
+  }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 9ch 1fr;
+    gap: 0 2ch;
+  }
+
+  .kv .k {
+    color: var(--lavender);
+  }
+
+  .kv .v {
+    color: color-mix(in srgb, var(--white), transparent 10%);
+  }
+
   .portfolio-box {
     width: 100%;
     max-width: 78ch;
@@ -285,6 +408,21 @@ const links = [
 
   .links a {
     color: var(--lavender);
+  }
+
+  @media (max-width: 700px) {
+    /* stack instead of dropping the portrait: 240px is exactly 2x the 120px
+       source, so pixelated scaling stays even */
+    .neofetch {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5lh;
+    }
+
+    .portrait {
+      width: 240px;
+      height: 240px;
+    }
   }
 
   @media (max-width: 500px) {

@@ -1,9 +1,269 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
+// drop oracle.svg / growth-grids.svg / delta-force.svg into src/assets/logos/
+// a missing file simply renders no logo, so the build never breaks on a gap
+const logos = import.meta.glob("../assets/logos/*.svg", {
+  eager: true,
+  import: "default",
+  query: "?url",
+}) as Record<string, string>;
+
+const logoFor = (slug: string) => logos[`../assets/logos/${slug}.svg`];
+
+const experience = [
+  {
+    role: "member of technical staff",
+    org: "oracle",
+    logo: "oracle",
+    kind: "full-time",
+    period: "jul 2026 — present",
+    place: "bengaluru · on-site",
+    points: [
+      "full-stack engineer on Oracle Data Safe, contributing across the Discovery & Masking and UI teams.",
+      "deliver end-to-end features spanning frontend and backend in a high-velocity engineering environment.",
+    ],
+  },
+  {
+    role: "software consultant",
+    org: "growth grids",
+    logo: "growth-grids",
+    kind: "freelance",
+    period: "dec 2025 — mar 2026",
+    place: "remote",
+    points: [
+      "built a high-throughput CV extraction platform with React (shadcn/ui), FastAPI, PaddleOCR, Gemini 2.5 Flash Lite and MongoDB — PDF/DOCX ingestion, OCR, LLM-based structuring and rule-based normalization.",
+      "cut end-to-end resume processing from 40s to 5s against the in-house solution, validated at a scale of 100,000+ CVs, and added bulk parsing through the Gemini Batch API.",
+      "designed a modular, Dockerized architecture with interchangeable OCR (PaddleOCR/Tesseract) and multiple LLM backends — including locally hosted models on NVIDIA A100-powered GCP infrastructure — plus manual review/editing workflows.",
+    ],
+  },
+  {
+    role: "software developer",
+    org: "delta force · NIT trichy",
+    logo: "delta-force",
+    kind: "part-time",
+    period: "aug 2023 — mar 2025",
+    place: "tiruchirappalli · hybrid",
+    points: [
+      "contributed to app and web projects across a wide range of stacks, including mobile apps and web-based games for college fests.",
+      "authored technical blogs for the club website, designed promotional posters, and mentored junior members.",
+    ],
+  },
+];
+
+const links = [
+  { label: "github", href: "https://github.com/gujraI" },
+  {
+    label: "linkedin",
+    href: "https://www.linkedin.com/in/ansh-gujral-9b2a7a23b/",
+  },
+  { label: "x", href: "https://x.com/laxpsy" },
+];
 ---
 
 <Layout filename="portfolio.astro" title="Portfolio">
-  <div class="section-flex">
-    <p style="font-size: 1.5ch;">coming soon</p>
-  </div>
+  <section class="section-flex">
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">bio</span>
+      </div>
+      <div class="content">
+        <p>
+          tech enthusiast with a passion for software development and content
+          writing. i work on <span class="hl">Oracle Data Safe</span> as a full-stack
+          engineer — interned there as an MTS, and picked up ~2 years of hands-on
+          experience through <span class="hl">Delta Force</span>, NIT Trichy's
+          premier technical club, building web games and websites for fests like
+          Festember and Pragyan.
+        </p>
+        <p>
+          keeping the tech aside, i love to read, write (checkout my medium!),
+          rice my arch laptop (okay, maybe i can't keep the tech aside) and
+          meditate.
+        </p>
+      </div>
+    </div>
+
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">experience</span>
+      </div>
+      <div class="content">
+        {
+          experience.map((job) => (
+            <div class="job">
+              <div class="job-head">
+                <span class="job-title">
+                  {logoFor(job.logo) && (
+                    <img
+                      class="job-logo"
+                      src={logoFor(job.logo)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                  <span class="job-role">{job.role}</span>
+                </span>
+                <span class="job-period">{job.period}</span>
+              </div>
+              <div class="job-meta">
+                <span class="hl">{job.org}</span>
+                <span>·</span>
+                <span>{job.kind}</span>
+                <span>·</span>
+                <span>{job.place}</span>
+              </div>
+              <ul>
+                {job.points.map((point) => (
+                  <li>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">socials</span>
+      </div>
+      <div class="content">
+        <div class="links">
+          {
+            links.map((link) => (
+              <a href={link.href} rel="me">
+                {link.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .portfolio-box {
+    width: 100%;
+    max-width: 78ch;
+  }
+
+  /* box-= provides 1lh 1ch padding; shear-=top removes only the top one,
+     so the header strip sits on the border and content restores it */
+  .header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .box-title {
+    background-color: var(--background0);
+    padding: 0 1ch;
+    font-weight: 600;
+    color: var(--mauve);
+  }
+
+  .content {
+    padding-top: 0.5lh;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8lh;
+  }
+
+  .content p {
+    font-size: 1.5ch;
+    margin: 0;
+  }
+
+  .content ul {
+    list-style-position: outside;
+    padding-inline-start: 3ch;
+    margin: 0;
+  }
+
+  .content li {
+    font-size: 1.5ch;
+  }
+
+  .hl {
+    color: var(--lavender);
+  }
+
+  .job {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3lh;
+  }
+
+  .job + .job {
+    margin-block-start: 0.8lh;
+    padding-block-start: 1lh;
+    border-top: 1px solid color-mix(in srgb, var(--white), transparent 85%);
+  }
+
+  .job-head {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 2ch;
+    flex-wrap: wrap;
+  }
+
+  .job-title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1ch;
+  }
+
+  .job-logo {
+    width: 2.4ch;
+    height: 2.4ch;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .job-role {
+    font-weight: 600;
+    color: var(--rosewater);
+    font-size: 1.5ch;
+  }
+
+  .job-period {
+    font-size: 1.5ch;
+    color: color-mix(in srgb, var(--white), transparent 45%);
+  }
+
+  .job-meta {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75ch;
+    font-size: 1.5ch;
+    color: color-mix(in srgb, var(--white), transparent 45%);
+  }
+
+  .links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2ch;
+    font-size: 1.5ch;
+  }
+
+  .links a {
+    color: var(--lavender);
+  }
+
+  @media (max-width: 500px) {
+    .content p,
+    .content li,
+    .job-meta,
+    .job-period,
+    .job-role {
+      font-size: 1.3ch;
+    }
+  }
+</style>

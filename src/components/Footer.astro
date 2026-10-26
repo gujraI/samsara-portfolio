@@ -41,6 +41,9 @@ const { filename } = Astro.props;
     display: flex;
     flex-direction: column;
     padding: 0.5ch;
+    /* let the mantle run behind the gesture bar instead of ending above it;
+       env() is 0 on devices without an inset, so desktop is unchanged */
+    padding-bottom: calc(0.5ch + env(safe-area-inset-bottom, 0px));
     background-color: var(--mantle);
   }
 

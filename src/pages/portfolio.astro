@@ -11,14 +11,22 @@ const logos = import.meta.glob("../assets/logos/*.svg", {
 
 const logoFor = (slug: string) => logos[`../assets/logos/${slug}.svg`];
 
-const experience = [
+type MetaItem = { text: string; href?: string; note?: string };
+
+const experience: Array<{
+  role: string;
+  org: string;
+  logo: string;
+  period: string;
+  meta: MetaItem[];
+  points: string[];
+}> = [
   {
     role: "member of technical staff",
     org: "oracle",
     logo: "oracle",
-    kind: "full-time",
     period: "jul 2026 — present",
-    place: "bengaluru · on-site",
+    meta: [{ text: "full-time" }, { text: "bengaluru · on-site" }],
     points: [
       "full-stack engineer on Oracle Data Safe, contributing across the Discovery & Masking and UI teams.",
       "deliver end-to-end features spanning frontend and backend in a high-velocity engineering environment.",
@@ -28,9 +36,8 @@ const experience = [
     role: "software consultant",
     org: "growth grids",
     logo: "growth-grids",
-    kind: "freelance",
     period: "dec 2025 — mar 2026",
-    place: "remote",
+    meta: [{ text: "freelance" }, { text: "remote" }],
     points: [
       "built a high-throughput CV extraction platform with React (shadcn/ui), FastAPI, PaddleOCR, Gemini 2.5 Flash Lite and MongoDB — PDF/DOCX ingestion, OCR, LLM-based structuring and rule-based normalization.",
       "cut end-to-end resume processing from 40s to 5s against the in-house solution, validated at a scale of 100,000+ CVs, and added bulk parsing through the Gemini Batch API.",
@@ -41,9 +48,14 @@ const experience = [
     role: "software developer",
     org: "delta force · NIT trichy",
     logo: "delta-force",
-    kind: "part-time",
     period: "aug 2023 — mar 2025",
-    place: "tiruchirappalli · hybrid",
+    meta: [
+      {
+        text: "delta.nitt.edu",
+        href: "https://delta.nitt.edu",
+        note: "first web-dev project :0",
+      },
+    ],
     points: [
       "contributed to app and web projects across a wide range of stacks, including mobile apps and web-based games for college fests.",
       "authored technical blogs for the club website, designed promotional posters, and mentored junior members.",
@@ -77,9 +89,10 @@ const links = [
           Festember and Pragyan.
         </p>
         <p>
-          keeping the tech aside, i love to read, write (checkout my medium!),
-          rice my arch laptop (okay, maybe i can't keep the tech aside) and
-          meditate.
+          keeping the tech aside, i love to read, write (<a
+            href="https://x.com/laxpsy">x</a
+          >, <a href="https://medium.com/@tearsofsatoru">medium</a>), rice my
+          arch laptop (okay, maybe i can't keep the tech aside) and meditate.
         </p>
       </div>
     </div>
@@ -109,10 +122,19 @@ const links = [
               </div>
               <div class="job-meta">
                 <span class="hl">{job.org}</span>
-                <span>·</span>
-                <span>{job.kind}</span>
-                <span>·</span>
-                <span>{job.place}</span>
+                {job.meta.map((item) => (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {item.href ? (
+                        <a href={item.href}>{item.text}</a>
+                      ) : (
+                        item.text
+                      )}
+                      {item.note ? ` (${item.note})` : ""}
+                    </span>
+                  </>
+                ))}
               </div>
               <ul>
                 {job.points.map((point) => (
@@ -174,6 +196,10 @@ const links = [
   .content p {
     font-size: 1.5ch;
     margin: 0;
+  }
+
+  .content p a {
+    color: var(--lavender);
   }
 
   .content ul {
@@ -243,6 +269,10 @@ const links = [
     gap: 0.75ch;
     font-size: 1.5ch;
     color: color-mix(in srgb, var(--white), transparent 45%);
+  }
+
+  .job-meta a {
+    color: var(--lavender);
   }
 
   .links {

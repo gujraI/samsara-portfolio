@@ -423,6 +423,16 @@ const uptime = currentRole
       width: 240px;
       height: 240px;
     }
+
+    /* less air between entries and panels once things are stacked */
+    .section-flex {
+      gap: 1.2lh;
+    }
+
+    .job + .job {
+      margin-block-start: 0.4lh;
+      padding-block-start: 0.6lh;
+    }
   }
 
   @media (max-width: 500px) {

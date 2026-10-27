@@ -1,9 +1,395 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import portraitUrl from "../assets/portrait.png?url";
+import { experience } from "../data/experience";
+import { profile, socials } from "../data/profile";
+
+// drop oracle.svg / growth-grids.svg / delta-force.svg into src/assets/logos/
+// a missing file simply renders no logo, so the build never breaks on a gap
+const logos = import.meta.glob("../assets/logos/*.svg", {
+  eager: true,
+  import: "default",
+  query: "?url",
+}) as Record<string, string>;
+
+const logoFor = (slug: string) => logos[`../assets/logos/${slug}.svg`];
+
+// "uptime" is derived from the current role, so it advances on its own at build
+// time instead of being a number someone forgets to bump
+const currentRole = experience.find((job) => job.current);
+
+const roleLine = currentRole
+  ? `${profile.title} @ ${currentRole.org}`
+  : profile.title;
+
+const monthsAt = (from: string) => {
+  const [year, month] = from.split("-").map(Number);
+  const now = new Date();
+  return Math.max(
+    0,
+    (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month),
+  );
+};
+
+const humanizeMonths = (months: number) => {
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  if (!years) return `${rest} mo${rest === 1 ? "" : "s"}`;
+  if (!rest) return `${years} yr${years === 1 ? "" : "s"}`;
+  return `${years} yr${years === 1 ? "" : "s"} ${rest} mo${rest === 1 ? "" : "s"}`;
+};
+
+const uptime = currentRole
+  ? `${humanizeMonths(monthsAt(currentRole.start))} @ ${currentRole.org}`
+  : null;
 ---
 
 <Layout filename="portfolio.astro" title="Portfolio">
-  <div class="section-flex">
-    <p style="font-size: 1.5ch;">coming soon</p>
-  </div>
+  <section class="section-flex">
+    <div class="neofetch">
+      <img
+        class="portrait"
+        src={portraitUrl}
+        alt=""
+        aria-hidden="true"
+        width="120"
+        height="120"
+        decoding="async"
+      />
+      <div class="whoami">
+        <span class="whoami-head">
+          <span class="user">{profile.user}</span>@<span class="host"
+            >{profile.host}</span
+          >
+        </span>
+        <span class="whoami-rule">───────────────────────</span>
+        <div class="kv">
+          <span class="k">role</span><span class="v">{roleLine}</span>
+        </div>
+        <div class="kv">
+          <span class="k">location</span><span class="v"
+            >{profile.location}</span
+          >
+        </div>
+        <div class="kv">
+          <span class="k">editor</span><span class="v">{profile.editor}</span>
+        </div>
+        {
+          uptime && (
+            <div class="kv">
+              <span class="k">uptime</span>
+              <span class="v">{uptime}</span>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">bio</span>
+      </div>
+      <div class="content">
+        <p>
+          tech enthusiast with a passion for software development and content
+          writing. i work on <span class="hl">Oracle Data Safe</span> as a full-stack
+          engineer — interned there as an MTS, and picked up ~2 years of hands-on
+          experience through <span class="hl">Delta Force</span>, NIT Trichy's
+          premier technical club, building web games and websites for fests like
+          Festember and Pragyan.
+        </p>
+        <p>
+          keeping the tech aside, i love to read, write (<a
+            href="https://x.com/laxpsy">x</a
+          >, <a href="https://medium.com/@tearsofsatoru">medium</a>), rice my
+          arch laptop (okay, maybe i can't keep the tech aside) and meditate.
+        </p>
+      </div>
+    </div>
+
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">experience</span>
+      </div>
+      <div class="content">
+        {
+          experience.map((job) => (
+            <div class="job">
+              <div class="job-head">
+                <span class="job-title">
+                  {logoFor(job.logo) && (
+                    <img
+                      class="job-logo"
+                      src={logoFor(job.logo)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                  <span class="job-role">{job.role}</span>
+                </span>
+                <span class="job-period">{job.period}</span>
+              </div>
+              <div class="job-meta">
+                <span class="hl">{job.org}</span>
+                {job.meta.map((item) => (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {item.href ? (
+                        <a href={item.href}>{item.text}</a>
+                      ) : (
+                        item.text
+                      )}
+                      {item.note ? ` (${item.note})` : ""}
+                    </span>
+                  </>
+                ))}
+              </div>
+              <ul>
+                {job.points.map((point) => (
+                  <li>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="portfolio-box" box-="square" shear-="top">
+      <div class="header">
+        <span class="box-title">socials</span>
+      </div>
+      <div class="content">
+        <div class="links">
+          {
+            socials.map((link) => (
+              <a href={link.href} rel="me">
+                {link.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .section-flex {
+    /* one knob for every piece of body text on this page; the old approach
+       listed selectors in the mobile query and silently missed new ones */
+    --text-size: 1.5ch;
+  }
+
+  .neofetch {
+    width: 100%;
+    max-width: 78ch;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3ch;
+  }
+
+  .portrait {
+    /* 2x the 120px source; integer multiples only, so pixelated scaling stays
+       even. 120px (1x) is the next step down if this is still too big. */
+    width: 240px;
+    height: 240px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    user-select: none;
+  }
+
+  .whoami {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2lh;
+    padding-top: 0.3lh;
+    font-size: var(--text-size);
+  }
+
+  .whoami-head .user {
+    color: var(--mauve);
+    font-weight: 600;
+  }
+
+  .whoami-head .host {
+    color: var(--white);
+  }
+
+  .whoami-rule {
+    color: color-mix(in srgb, var(--white), transparent 70%);
+  }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 9ch 1fr;
+    gap: 0 2ch;
+  }
+
+  .kv .k {
+    color: var(--lavender);
+  }
+
+  .kv .v {
+    color: color-mix(in srgb, var(--white), transparent 10%);
+  }
+
+  .portfolio-box {
+    width: 100%;
+    max-width: 78ch;
+  }
+
+  /* box-= provides 1lh 1ch padding; shear-=top removes only the top one,
+     so the header strip sits on the border and content restores it */
+  .header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .box-title {
+    background-color: var(--background0);
+    padding: 0 1ch;
+    /* matches the nav's 1.5ch; do not inherit body's 18px */
+    font-size: 1.5ch;
+    font-weight: 600;
+    color: var(--mauve);
+  }
+
+  .content {
+    padding-top: 0.5lh;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8lh;
+  }
+
+  .content p {
+    font-size: var(--text-size);
+    margin: 0;
+  }
+
+  .content p a {
+    color: var(--lavender);
+  }
+
+  .content ul {
+    list-style-position: outside;
+    padding-inline-start: 3ch;
+    margin: 0;
+  }
+
+  .content li {
+    font-size: var(--text-size);
+  }
+
+  .hl {
+    color: var(--lavender);
+  }
+
+  .job {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3lh;
+  }
+
+  .job + .job {
+    margin-block-start: 0.8lh;
+    padding-block-start: 1lh;
+    border-top: 1px solid color-mix(in srgb, var(--white), transparent 85%);
+  }
+
+  .job-head {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    /* `gap` would apply 2ch vertically as well once the period wraps onto its
+       own line on narrow screens — keep the two axes separate */
+    column-gap: 2ch;
+    row-gap: 0.1lh;
+    flex-wrap: wrap;
+  }
+
+  .job-title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1ch;
+  }
+
+  .job-logo {
+    width: 2.4ch;
+    height: 2.4ch;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .job-role {
+    font-weight: 600;
+    color: var(--rosewater);
+    font-size: var(--text-size);
+  }
+
+  .job-period {
+    font-size: var(--text-size);
+    color: color-mix(in srgb, var(--white), transparent 45%);
+  }
+
+  .job-meta {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75ch;
+    font-size: var(--text-size);
+    color: color-mix(in srgb, var(--white), transparent 45%);
+  }
+
+  .job-meta a {
+    color: var(--lavender);
+  }
+
+  .links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2ch;
+    font-size: var(--text-size);
+  }
+
+  .links a {
+    color: var(--lavender);
+  }
+
+  @media (max-width: 700px) {
+    /* stack instead of dropping the portrait: 240px is exactly 2x the 120px
+       source, so pixelated scaling stays even */
+    .neofetch {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5lh;
+    }
+
+    .portrait {
+      width: 240px;
+      height: 240px;
+    }
+
+    /* less air between entries and panels once things are stacked */
+    .section-flex {
+      gap: 1.2lh;
+    }
+
+    .job + .job {
+      margin-block-start: 0.1lh;
+      padding-block-start: 0.25lh;
+    }
+  }
+
+  @media (max-width: 500px) {
+    .section-flex {
+      --text-size: 1.3ch;
+    }
+  }
+</style>

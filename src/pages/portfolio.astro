@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import portraitUrl from "../assets/portrait.png?url";
 import { experience } from "../data/experience";
 import { profile, socials } from "../data/profile";
+import { formatUptime } from "../data/uptime";
 
 // drop oracle.svg / growth-grids.svg / delta-force.svg into src/assets/logos/
 // a missing file simply renders no logo, so the build never breaks on a gap
@@ -14,33 +15,17 @@ const logos = import.meta.glob("../assets/logos/*.svg", {
 
 const logoFor = (slug: string) => logos[`../assets/logos/${slug}.svg`];
 
-// "uptime" is derived from the current role, so it advances on its own at build
-// time instead of being a number someone forgets to bump
+// "uptime" is derived from the current role. The value below is the build-time
+// fallback; the client script re-derives it from `data-uptime-start` so it stays
+// accurate between deploys instead of freezing at the last build.
 const currentRole = experience.find((job) => job.current);
 
 const roleLine = currentRole
   ? `${profile.title} @ ${currentRole.org}`
   : profile.title;
 
-const monthsAt = (from: string) => {
-  const [year, month] = from.split("-").map(Number);
-  const now = new Date();
-  return Math.max(
-    0,
-    (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month),
-  );
-};
-
-const humanizeMonths = (months: number) => {
-  const years = Math.floor(months / 12);
-  const rest = months % 12;
-  if (!years) return `${rest} mo${rest === 1 ? "" : "s"}`;
-  if (!rest) return `${years} yr${years === 1 ? "" : "s"}`;
-  return `${years} yr${years === 1 ? "" : "s"} ${rest} mo${rest === 1 ? "" : "s"}`;
-};
-
 const uptime = currentRole
-  ? `${humanizeMonths(monthsAt(currentRole.start))} @ ${currentRole.org}`
+  ? `${formatUptime(currentRole.start)} @ ${currentRole.org}`
   : null;
 ---
 
@@ -78,7 +63,13 @@ const uptime = currentRole
           uptime && (
             <div class="kv">
               <span class="k">uptime</span>
-              <span class="v">{uptime}</span>
+              <span
+                class="v"
+                data-uptime-start={currentRole.start}
+                data-uptime-org={currentRole.org}
+              >
+                {uptime}
+              </span>
             </div>
           )
         }
@@ -175,6 +166,29 @@ const uptime = currentRole
     </div>
   </section>
 </Layout>
+
+<script>
+  import { formatUptime } from "../data/uptime";
+
+  // Re-derive the uptime from the role's start month on every page load so it
+  // stays accurate between deploys. The server-rendered value is the no-JS
+  // fallback.
+  const refreshUptime = () => {
+    for (const el of document.querySelectorAll<HTMLElement>(
+      "[data-uptime-start]",
+    )) {
+      const start = el.dataset.uptimeStart;
+      if (!start) continue;
+      const org = el.dataset.uptimeOrg;
+      const value = formatUptime(start);
+      el.textContent = org ? `${value} @ ${org}` : value;
+    }
+  };
+
+  refreshUptime();
+  // re-run after a client-side navigation, if the router is enabled later
+  document.addEventListener("astro:page-load", refreshUptime);
+</script>
 
 <style>
   .section-flex {
